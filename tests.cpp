@@ -1,14 +1,14 @@
 #include "golden_opt.h"
+#include "config_reader.h"
 #include <cmath>
 #include <iostream>
 #include <vector>
 #include <string>
 #include <iomanip>
 
-// Примеры тестовых функций
-double f_quad(double x) { return x * x; } // минимум в 0
-double f_flat(double x) { return 5.0; }   // крайняя: плоская функция (любая точка — минимум)
-double f_bad(double x) { // внештат: быстро растёт, может не укладываться в локализации
+double f_quad(double x) { return x * x; }
+double f_flat(double x) { return 5.0; }
+double f_bad(double x) {
     if (std::fabs(x) > 1e4) return 1e300;
     return std::exp(x);
 }

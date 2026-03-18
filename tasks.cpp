@@ -1,4 +1,5 @@
 #include "golden_opt.h"
+#include "config_reader.h"
 #include <iostream>
 #include <vector>
 #include <cmath>
