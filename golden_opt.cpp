@@ -7,10 +7,7 @@
 #include <iostream>
 #include <algorithm>
 
-// ------------------ реализация Fop ------------------
-
 bool Fop::check_cfg(Config cfg_) {
-    // Проверяем, что конфиг имеет разумные значения
     if (cfg_.n_initial_points <= 0) {
         throw std::invalid_argument("n_initial_points must be > 0");
     }
@@ -48,13 +45,10 @@ void Fop::set_config(const Config& cfg_) {
 }
 
 double Fop::derivative(double x, double h) const {
-    // центральная разность
     return (fp(x + h) - fp(x - h)) / (2.0 * h);
 }
 
 Tripple Fop::localize() {
-    // Попытка найти интервал [a,b] и внутреннюю точку c: f(c) < f(a) и f(c) < f(b)
-    // Выбираем cfg.n_initial_points точек равномерно на [init_a, init_b] (включая концы).
     double A = cfg.init_a;
     double B = cfg.init_b;
     int N = std::max(1, cfg.n_initial_points);
@@ -67,17 +61,15 @@ Tripple Fop::localize() {
         else xi = A + (B - A) * (double(i) / double(N - 1));
 
         double step = cfg.initial_step;
-        if (step <= 0) step = (B - A) / 100.0;
+
         double left = xi - step;
         double right = xi + step;
 
-        // ограничим начальные границы
         double global_left = std::max(-cfg.max_expand, A - cfg.max_expand);
         double global_right = std::min(cfg.max_expand, B + cfg.max_expand);
 
         int expand_iter = 0;
         while (true) {
-            // ограничение
             if (left < -cfg.max_expand) left = -cfg.max_expand;
             if (right > cfg.max_expand) right = cfg.max_expand;
 
@@ -85,7 +77,6 @@ Tripple Fop::localize() {
             double cr = fp(right);
             double cx = fp(xi);
 
-            // если xi внутри и f(xi) меньше чем по краям — нашли троицу
             if (cx <= cl && cx <= cr) {
                 best_a = left;
                 best_b = right;
@@ -94,38 +85,29 @@ Tripple Fop::localize() {
                 break;
             }
 
-            // расширяем сторону с худшей (если f(left) < f(right) значит минимум влево -> сдвигаем right)
-            // но более простая стратегия — расширяем оба края экспоненциально
             step *= cfg.expand_factor;
             left = xi - step;
             right = xi + step;
             expand_iter++;
 
-            // остановка по слишком большому расширению
             if (step > cfg.max_expand || std::isinf(step) || expand_iter > 1000) break;
         }
         if (found) break;
     }
 
     if (!found) {
-        // как запасной вариант — возьмём весь init-отрезок с центром
-        best_a = A;
-        best_b = B;
-        best_c = 0.5 * (A + B);
+        throw std::runtime_error("Failed to localize a minimum within the specified parameters.");
     }
 
     Tripple t{best_a, best_b, best_c};
     return t;
 }
 
-double Fop::findmin() {
-    // Выполнить локализацию
-    Tripple bracket = localize();
+double Fop::findmin(Tripple bracket) {
     double a = bracket.a;
     double b = bracket.b;
 
-    // Golden section constants
-    const double phi = (std::sqrt(5.0) - 1.0) / 2.0; // ~0.618...
+    const double phi = (std::sqrt(5.0) - 1.0) / 2.0;
     double c = b - phi * (b - a);
     double d = a + phi * (b - a);
     double fc = fp(c);
@@ -135,7 +117,6 @@ double Fop::findmin() {
     int iter = 0;
 
     while (iter < cfg.max_iters) {
-        // Выбор по значению функции
         if (fc < fd) {
             b = d;
             d = c;
@@ -153,7 +134,6 @@ double Fop::findmin() {
         double xbest = (fc < fd) ? c : d;
         double fbest = std::min(fc, fd);
 
-        // критерии останова
         if (cfg.stop_type == Config::BY_ARGUMENT) {
             if (std::fabs(b - a) < cfg.tol) return xbest;
         } else if (cfg.stop_type == Config::BY_FUNCTION) {
@@ -167,19 +147,14 @@ double Fop::findmin() {
         iter++;
     }
 
-    // по достижении max_iters возвращаем лучший найденный
     double result = (fc < fd) ? c : d;
     return result;
 }
 
-// ------------------ простой XML-парсер (отдельная функция) ------------------
-// Читает файл config.xml (простая структура, без вложенных атрибутов).
-// Возвращает Config; при ошибках возвращает конфиг с дефолтными значениями.
 Config load_config_from_xml(const std::string& filename) {
     Config cfg;
     std::ifstream ifs(filename);
     if (!ifs.is_open()) {
-        // файл не найден — вернём дефолтный
         return cfg;
     }
     std::stringstream ss;
@@ -238,7 +213,6 @@ Config load_config_from_xml(const std::string& filename) {
 
     std::string stoptype;
     if (get_tag_string("stop_type", stoptype)) {
-        // accept "argument", "function", "gradient" or numeric 0/1/2
         if (stoptype == "argument" || stoptype == "BY_ARGUMENT" || stoptype == "0") cfg.stop_type = Config::BY_ARGUMENT;
         else if (stoptype == "function" || stoptype == "BY_FUNCTION" || stoptype == "1") cfg.stop_type = Config::BY_FUNCTION;
         else if (stoptype == "gradient" || stoptype == "BY_GRADIENT" || stoptype == "2") cfg.stop_type = Config::BY_GRADIENT;

@@ -21,48 +21,66 @@ void check_close(const std::string& name, double got, double expected, double to
 }
 
 int main() {
-    // Загружаем конфиг (если нет файла — используются дефолты)
     Config cfg = load_config_from_xml("config.xml");
-    // Тест 1: штатная ситуация — x^2
     {
+        Tripple bracket;
         Fop f(f_quad, cfg);
-        double xmin = f.findmin();
+        try {
+            bracket = f.localize();
+        } catch (const std::exception& e) {
+            std::cout << "TEST FAILED: quad_min localization threw exception: " << e.what() << "\n";
+        }
+        double xmin = f.findmin(bracket);
         check_close("quad_min", xmin, 0.0, 1e-4);
     }
 
-    // Тест 2: крайняя — плоская функция, любой x допустим; проверим, что возвращаемое значение финит
     {
+        Tripple bracket;
         Fop f(f_flat, cfg);
-        double xmin = f.findmin();
+        try {
+            bracket = f.localize();
+        } catch (const std::exception& e) {
+            std::cout << "TEST FAILED: flat_min localization threw exception: " << e.what() << "\n";
+        }
+        bracket = f.localize();
+        double xmin = f.findmin(bracket);
         if (!std::isfinite(xmin)) {
             std::cout << "TEST FAILED: flat_min produced non-finite result\n";
         }
     }
 
-    // Тест 3: внештатная — функция экспонента (локализация может не сработать)
     {
-        // уменьшим шаг расширения и допустим большую толерантность, чтобы проверить поведение
+        Tripple bracket;
         Config c2 = cfg;
         c2.initial_step = 0.1;
         c2.max_expand = 1e3;
         c2.max_iters = 200;
         Fop f(f_bad, c2);
-        double xmin = f.findmin();
+        try {
+            bracket = f.localize();
+        } catch (const std::exception& e) {
+            std::cout << "TEST FAILED: bad_min localization threw exception: " << e.what() << "\n";
+        }
+        double xmin = f.findmin(bracket);
         if (!std::isfinite(xmin)) {
             std::cout << "TEST FAILED: bad_min produced non-finite result\n";
         }
     }
 
-    // Тест 4: остановка по градиенту (проверьте, что этот stop type не вызывает ошибок)
     {
+        Tripple bracket;
         Config c3 = cfg;
         c3.stop_type = Config::BY_GRADIENT;
         c3.tol = 1e-6;
         Fop f(f_quad, c3);
-        double xmin = f.findmin();
+        try {
+            bracket = f.localize();
+        } catch (const std::exception& e) {
+            std::cout << "TEST FAILED: grad_stop_quad localization threw exception: " << e.what() << "\n";
+        }
+        double xmin = f.findmin(bracket);
         check_close("grad_stop_quad", xmin, 0.0, 1e-4);
     }
 
-    // Если программа дошла сюда без вывода — все тесты прошли (выводы только при ошибке).
     return 0;
 }

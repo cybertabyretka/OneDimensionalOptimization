@@ -37,7 +37,7 @@ public:
     Tripple localize();
 
     // главный метод — минимизация методом золотого сечения, возвращает x_min
-    double findmin();
+    double findmin(Tripple bracket);
 
     // численная первая производная (центральная)
     double derivative(double x, double h = 1e-6) const;
