@@ -1,3 +1,6 @@
+#ifndef CONFIG_READER_H
+#define CONFIG_READER_H
+
 #include <iostream>
 
 struct Config {
@@ -13,3 +16,5 @@ struct Config {
 };
 
 Config load_config_from_xml(const std::string& filename);
+
+#endif // CONFIG_READER_H

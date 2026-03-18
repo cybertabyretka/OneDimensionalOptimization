@@ -2,7 +2,10 @@
 #define GOLDEN_OPT_H
 
 #include <functional>
+#include <string>
 #include <tuple>
+
+#include "config_reader.h"
 
 struct Tripple {
     double a;
@@ -31,6 +34,4 @@ private:
     bool check_cfg(Config cfg_);
 };
 
-Config load_config_from_xml(const std::string& filename);
-
-#endif
+#endif // GOLDEN_OPT_H
