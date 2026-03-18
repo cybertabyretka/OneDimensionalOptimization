@@ -1,0 +1,11 @@
+<Config>
+  <n_initial_points>7</n_initial_points>
+  <init_a>-8</init_a>
+  <init_b>8</init_b>
+  <initial_step>0.5</initial_step>
+  <expand_factor>2</expand_factor>
+  <max_expand>1000</max_expand>
+  <max_iters>2000</max_iters>
+  <stop_type>argument</stop_type> <!-- argument | function | gradient -->
+  <tol>1e-6</tol>
+</Config>
