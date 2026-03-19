@@ -1,86 +1,203 @@
 #include "golden_opt.h"
-#include "config_reader.h"
 #include <cmath>
 #include <iostream>
-#include <vector>
-#include <string>
 #include <iomanip>
+#include <limits>
+#include <stdexcept>
+#include <sstream>
+#include <string>
+
+static int g_failures = 0;
+
+static void fail(const std::string& message) {
+    std::cout << "TEST FAILED: " << message << "\n";
+    ++g_failures;
+}
+
+static void check_close(const std::string& name, double got, double expected, double tol = 1e-6) {
+    if (!(std::isfinite(got) && std::fabs(got - expected) <= tol)) {
+        std::ostringstream os;
+        os << std::setprecision(10);
+        os << "got=" << got << " expected=" << expected << " tol=" << tol;
+        fail(name + " " + os.str());
+    }
+}
+
+template <typename ExceptionT, typename Fn>
+static void expect_throws(const std::string& name, Fn&& fn) {
+    try {
+        fn();
+        fail(name + " did not throw");
+    } catch (const ExceptionT&) {
+        // expected
+    } catch (const std::exception& e) {
+        fail(name + " threw wrong exception type: " + std::string(typeid(e).name()) + " (" + e.what() + ")");
+    } catch (...) {
+        fail(name + " threw non-standard exception");
+    }
+}
 
 double f_quad(double x) { return x * x; }
-double f_flat(double x) { return 5.0; }
-double f_bad(double x) {
-    if (std::fabs(x) > 1e4) return 1e300;
-    return std::exp(x);
+double f_flat(double /*x*/) { return 5.0; }
+double f_exp(double x) { return std::exp(x); }
+double f_nan(double /*x*/) { return std::numeric_limits<double>::quiet_NaN(); }
+double f_inf(double x) {
+    if (x > 0.0) return std::numeric_limits<double>::infinity();
+    return x * x;
 }
-
-void check_close(const std::string& name, double got, double expected, double tol = 1e-5) {
-    if (!(std::isfinite(got) && std::fabs(got - expected) <= tol)) {
-        std::cout << "TEST FAILED: " << name << " got=" << std::setprecision(10) << got
-                  << " expected=" << expected << " tol=" << tol << std::endl;
-    }
-}
+double f_throw(double /*x*/) { throw std::runtime_error("boom"); }
+double f_cos(double x) { return std::cos(x); }
 
 int main() {
-    Config cfg = load_config_from_xml("config.xml");
-    {
-        Tripple bracket;
-        Fop f(f_quad, cfg);
-        try {
-            bracket = f.localize();
-        } catch (const std::exception& e) {
-            std::cout << "TEST FAILED: quad_min localization threw exception: " << e.what() << "\n";
-        }
-        double xmin = f.findmin(bracket);
-        check_close("quad_min", xmin, 0.0, 1e-4);
-    }
+    // 1) Constructor & configuration validation
+    expect_throws<std::invalid_argument>("constructor_null_fp", []() { Fop f(nullptr); });
 
     {
+        Fop f(f_quad);
+        Config bad_cfg = {};
+        bad_cfg.initial_step = 0.0;
+        expect_throws<std::invalid_argument>("set_config_invalid_step", [&]() { f.set_config(bad_cfg); });
+
+        bad_cfg = {};
+        bad_cfg.max_iters = 0;
+        expect_throws<std::invalid_argument>("set_config_invalid_max_iters", [&]() { f.set_config(bad_cfg); });
+
+        Config good_cfg = {};
+        good_cfg.initial_step = 0.1;
+        good_cfg.max_iters = 10;
+        try {
+            f.set_config(good_cfg);
+        } catch (const std::exception& e) {
+            fail(std::string("set_config valid config threw: ") + e.what());
+        }
+    }
+
+    // 2) Derivative correctness and error handling
+    {
+        Fop f(f_quad);
+        check_close("derivative_quad_at_2", f.derivative(2.0), 4.0, 1e-5);
+        check_close("derivative_quad_at_-3", f.derivative(-3.0), -6.0, 1e-5);
+
+        expect_throws<std::invalid_argument>("derivative_invalid_h", [&]() { f.derivative(1.0, 0.0); });
+        expect_throws<std::runtime_error>("derivative_nonfinite", [&]() { Fop fn(f_nan); fn.derivative(0.0); });
+        expect_throws<std::runtime_error>("derivative_function_exception", [&]() { Fop ft(f_throw); ft.derivative(0.0); });
+    }
+
+    // 3) Localize + findmin on a simple convex function
+    {
+        Fop f(f_quad);
         Tripple bracket;
-        Fop f(f_flat, cfg);
         try {
             bracket = f.localize();
         } catch (const std::exception& e) {
-            std::cout << "TEST FAILED: flat_min localization threw exception: " << e.what() << "\n";
+            fail(std::string("localize_quad threw: ") + e.what());
+            bracket = {0.0, 0.0, 0.0};
         }
-        bracket = f.localize();
+        if (!(bracket.a < bracket.c && bracket.c < bracket.b)) {
+            fail("localize_quad produced invalid bracket");
+        }
+        double xmin = f.findmin(bracket);
+        check_close("findmin_quad", xmin, 0.0, 1e-4);
+    }
+
+    // 4) Constant function should localize and return a finite result
+    {
+        Fop f(f_flat);
+        Tripple bracket;
+        try {
+            bracket = f.localize();
+        } catch (const std::exception& e) {
+            fail(std::string("localize_flat threw: ") + e.what());
+            bracket = {0.0, 0.0, 0.0};
+        }
         double xmin = f.findmin(bracket);
         if (!std::isfinite(xmin)) {
-            std::cout << "TEST FAILED: flat_min produced non-finite result\n";
+            fail("findmin_flat returned non-finite result");
         }
     }
 
+    // 5) Multiple minima (cosine) should find a local minimum with f(x) ~= -1
     {
+        Config cfg = {};
+        cfg.init_a = -10.0;
+        cfg.init_b = 10.0;
+        cfg.n_initial_points = 11;
+        Fop f(f_cos, cfg);
         Tripple bracket;
-        Config c2 = cfg;
-        c2.initial_step = 0.1;
-        c2.max_expand = 1e3;
-        c2.max_iters = 200;
-        Fop f(f_bad, c2);
         try {
             bracket = f.localize();
         } catch (const std::exception& e) {
-            std::cout << "TEST FAILED: bad_min localization threw exception: " << e.what() << "\n";
+            fail(std::string("localize_cos threw: ") + e.what());
+            bracket = {0.0, 0.0, 0.0};
         }
+
         double xmin = f.findmin(bracket);
-        if (!std::isfinite(xmin)) {
-            std::cout << "TEST FAILED: bad_min produced non-finite result\n";
-        }
+        double fmin = f_cos(xmin);
+        check_close("findmin_cos_value", fmin, -1.0, 1e-5);
     }
 
+    // 6) Monotonic function (exp) should fail localization in this algorithm
     {
-        Tripple bracket;
-        Config c3 = cfg;
-        c3.stop_type = Config::BY_GRADIENT;
-        c3.tol = 1e-6;
-        Fop f(f_quad, c3);
-        try {
-            bracket = f.localize();
-        } catch (const std::exception& e) {
-            std::cout << "TEST FAILED: grad_stop_quad localization threw exception: " << e.what() << "\n";
-        }
-        double xmin = f.findmin(bracket);
-        check_close("grad_stop_quad", xmin, 0.0, 1e-4);
+        Fop f(f_exp);
+        expect_throws<std::runtime_error>("localize_exp_no_minimum", [&]() { f.localize(); });
     }
 
-    return 0;
+    // 7) Functions producing non-finite values during localization should error
+    {
+        Config cfg = {};
+        cfg.init_a = -1.0;
+        cfg.init_b = 1.0;
+        cfg.initial_step = 0.1;
+        Fop f(f_inf, cfg);
+        expect_throws<std::runtime_error>("localize_inf_values", [&]() { f.localize(); });
+    }
+
+    // 8) findmin input validation
+    {
+        Fop f(f_quad);
+        expect_throws<std::invalid_argument>("findmin_invalid_bracket_nan", [&]() { f.findmin({std::numeric_limits<double>::quiet_NaN(), 1.0, 0.0}); });
+        expect_throws<std::invalid_argument>("findmin_invalid_bracket_order", [&]() { f.findmin({1.0, 0.0, 0.5}); });
+    }
+
+    // 9) Stop conditions (argument/function/gradient)
+    {
+        Config cfg = {};
+        cfg.tol = 1e-8;
+        cfg.max_iters = 1000;
+        cfg.init_a = -5.0;
+        cfg.init_b = 5.0;
+
+        cfg.stop_type = Config::BY_ARGUMENT;
+        {
+            Fop f(f_quad, cfg);
+            Tripple bracket = f.localize();
+            double xmin = f.findmin(bracket);
+            check_close("stop_by_argument", xmin, 0.0, 1e-4);
+        }
+
+        cfg.stop_type = Config::BY_FUNCTION;
+        {
+            Fop f(f_quad, cfg);
+            Tripple bracket = f.localize();
+            double xmin = f.findmin(bracket);
+            double fmin = f_quad(xmin);
+            double f_left = f_quad(cfg.init_a);
+            double f_right = f_quad(cfg.init_b);
+            if (!std::isfinite(xmin) || !std::isfinite(fmin)) {
+                fail("stop_by_function produced non-finite result");
+            }
+            if (!(fmin <= f_left && fmin <= f_right)) {
+                fail("stop_by_function did not improve over endpoints");
+            }
+        }
+
+        cfg.stop_type = Config::BY_GRADIENT;
+        {
+            Fop f(f_quad, cfg);
+            Tripple bracket = f.localize();
+            double xmin = f.findmin(bracket);
+            check_close("stop_by_gradient", xmin, 0.0, 1e-4);
+        }
+    }
+    return g_failures == 0 ? 0 : 1;
 }

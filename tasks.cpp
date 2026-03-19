@@ -13,27 +13,62 @@ double F1(double x) {
     return std::pow(x, 6) - V * std::pow(x, 5) + V * std::pow(x, 3) - 10.0 * x * x + x;
 }
 
-std::vector<double> find_all_minima(double (*f)(double), const Config& cfg) {
-    std::set<double> found;
-    for (int i = 0; i < cfg.n_initial_points; ++i) {
-        Config c = cfg;
-        c.n_initial_points = 1;
-        if (cfg.n_initial_points == 1) {}
-        double xi;
-        if (cfg.n_initial_points == 1) xi = 0.5 * (cfg.init_a + cfg.init_b);
-        else xi = cfg.init_a + (cfg.init_b - cfg.init_a) * (double(i) / double(std::max(1, cfg.n_initial_points - 1)));
+static double (*g_extremum_f)(double) = nullptr;
+static bool g_extremum_find_max = false;
 
-        c.init_a = xi - std::max(1.0, (cfg.init_b - cfg.init_a));
-        c.init_b = xi + std::max(1.0, (cfg.init_b - cfg.init_a));
-        Fop fo(f, c);
-        Tripple bracket = fo.localize();
-        double xm = fo.findmin(bracket);
-        double xm_r = std::round(xm / 1e-6) * 1e-6;
-        found.insert(xm_r);
+double extremum_wrapper(double x) {
+    if (g_extremum_f == nullptr) throw std::runtime_error("No objective function set for extremum search");
+    double v = g_extremum_f(x);
+    return g_extremum_find_max ? -v : v;
+}
+
+std::vector<double> find_all_extrema(double (*f)(double), const Config& cfg, bool find_max) {
+    const double a = cfg.init_a;
+    const double b = cfg.init_b;
+    const int base_points = std::max(1000, cfg.n_initial_points * 20);
+    const int N = std::max(3, base_points);
+
+    std::vector<double> xs(N+1);
+    std::vector<double> ys(N+1);
+
+    for (int i = 0; i <= N; ++i) {
+        xs[i] = a + (b - a) * (double(i) / double(N));
+        ys[i] = f(xs[i]);
     }
 
-    std::vector<double> res(found.begin(), found.end());
-    return res;
+    std::set<double> found;
+
+    g_extremum_f = f;
+    g_extremum_find_max = find_max;
+
+    for (int i = 1; i < N; ++i) {
+        bool is_extremum = false;
+        if (!find_max) {
+            is_extremum = (ys[i] <= ys[i-1] && ys[i] <= ys[i+1]);
+        } else {
+            is_extremum = (ys[i] >= ys[i-1] && ys[i] >= ys[i+1]);
+        }
+
+        if (!is_extremum) continue;
+
+        double left = xs[i-1];
+        double right = xs[i+1];
+
+        Config local_cfg = cfg;
+        local_cfg.init_a = left;
+        local_cfg.init_b = right;
+        local_cfg.n_initial_points = 1;
+        Fop fo(extremum_wrapper, local_cfg);
+
+        try {
+            Tripple bracket{left, right, xs[i]};
+            double xm = fo.findmin(bracket);
+            double xm_r = std::round(xm / 1e-6) * 1e-6;
+            found.insert(xm_r);
+        } catch (...) {}
+    }
+    g_extremum_f = nullptr;
+    return std::vector<double>(found.begin(), found.end());
 }
 
 double F2_line(double t) {
@@ -49,18 +84,25 @@ double F2_line(double t) {
 int main() {
     Config cfg = load_config_from_xml("config.xml");
 
-    std::cout << "=== Задание 1: одномерная оптимизация F1(x) (V=6) ===\n";
-    cfg.n_initial_points = std::max(5, cfg.n_initial_points);
-    cfg.init_a = (cfg.init_a < -1000) ? -10.0 : cfg.init_a;
-    cfg.init_b = (cfg.init_b > 1000) ? 10.0 : cfg.init_b;
+    std::cout << "=== Task 1: 1D optimization of F1(x) (V=6) ===\n";
+    cfg.n_initial_points = 201;
+    cfg.init_a = -10.0;
+    cfg.init_b = 10.0;
+    cfg.initial_step = 0.1;
+    cfg.max_expand = 1e6;
 
-    std::vector<double> minima = find_all_minima(F1, cfg);
-    std::cout << "Найдено " << minima.size() << " уникальных экстремумов (локальных минимумов) :\n";
+    std::vector<double> minima = find_all_extrema(F1, cfg, false);
+    std::vector<double> maxima = find_all_extrema(F1, cfg, true);
+
+    std::cout << "Found " << minima.size() << " unique local minima and " << maxima.size() << " unique local maxima:\n";
     for (double xm : minima) {
-        std::cout << std::fixed << std::setprecision(8) << " x = " << xm << ", F1(x) = " << F1(xm) << "\n";
+        std::cout << std::fixed << std::setprecision(8) << " x = " << xm << ", F1(x) = " << F1(xm) << " (minimum)\n";
+    }
+    for (double xm : maxima) {
+        std::cout << std::fixed << std::setprecision(8) << " x = " << xm << ", F1(x) = " << F1(xm) << " (maximum)\n";
     }
 
-    std::cout << "\n=== Задание 2: одномерный поиск вдоль направления (линейная подстановка) ===\n";
+    std::cout << "\n=== Task 2: 1D line search for local minimum ===\n";
     Config c2 = cfg;
     c2.init_a = -10.0;
     c2.init_b = 10.0;
@@ -69,9 +111,9 @@ int main() {
     Tripple bracket = fline.localize();
     double tmin = fline.findmin(bracket);
     double fmin = F2_line(tmin);
-    std::cout << "Минимум по прямой: t* = " << std::setprecision(8) << tmin
+    std::cout << "Minimum along the line: t* = " << std::setprecision(8) << tmin
               << ", F(t*) = " << fmin << "\n";
-    std::cout << "Соответствующая точка x = ("
+    std::cout << "Corresponding point x = ("
               << (2.0 - tmin) << ", " << (1.0 + 2.0 * tmin) << ", " << (6.0 + tmin) << ")\n";
 
     return 0;
