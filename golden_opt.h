@@ -31,8 +31,6 @@ public:
     double derivative(double x, double h = 1e-6) const;
     // Method to update or initialize the configuration parameters
     void set_config(const Config& cfg);
-
-private:
     // Helper method to validate the configuration parameters
     bool check_cfg(Config cfg_);
 };

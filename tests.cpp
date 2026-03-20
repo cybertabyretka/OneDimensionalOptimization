@@ -9,13 +9,21 @@
 
 static int g_failures = 0;
 
+// Helper function to report test failures
 static void fail(const std::string& message) {
     std::cout << "TEST FAILED: " << message << "\n";
     ++g_failures;
 }
 
-static void check_close(const std::string& name, double got, double expected, double tol = 1e-6) {
-    if (!(std::isfinite(got) && std::fabs(got - expected) <= tol)) {
+// Helper function to check if two doubles are close within a tolerance
+static void check_close(
+    const std::string& name, double got, double expected, double tol = 1e-6
+) {
+    if (
+        !(std::isfinite(got) && 
+        std::isfinite(expected) && 
+        std::fabs(got - expected) <= tol)
+    ) {
         std::ostringstream os;
         os << std::setprecision(10);
         os << "got=" << got << " expected=" << expected << " tol=" << tol;
@@ -23,6 +31,7 @@ static void check_close(const std::string& name, double got, double expected, do
     }
 }
 
+// Helper function to check if a function throws an expected exception type
 template <typename ExceptionT, typename Fn>
 static void expect_throws(const std::string& name, Fn&& fn) {
     try {

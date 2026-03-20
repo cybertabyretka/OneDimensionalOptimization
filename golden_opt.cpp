@@ -64,7 +64,6 @@ double Fop::derivative(double x, double h) const {
     }
 
     double denom = 2.0 * h;
-    if (denom == 0.0) throw std::runtime_error("division by zero in derivative");
     double res = (right - left) / denom;
     if (!std::isfinite(res)) throw std::runtime_error("derivative is non-finite");
     return res;
