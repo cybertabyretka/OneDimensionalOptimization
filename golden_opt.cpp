@@ -6,6 +6,12 @@
 #include <iostream>
 #include <algorithm>
 
+/*
+ * @brief Helper method to validate the configuration parameters for the optimization algorithm.
+ * @param cfg_  The configuration object to validate
+ * @return void
+ * @throws InvalidConfigArgument if any configuration parameter is invalid (e.g. non-positive step size, non-positive max_iters, etc.)
+ */
 void Fop::check_cfg(Config cfg_) {
     if (cfg_.n_initial_points < 1) {
         throw InvalidConfigArgument("n_initial_points must be >= 1");

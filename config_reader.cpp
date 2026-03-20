@@ -113,3 +113,15 @@ Config load_config_from_xml(const std::string& filename) {
     }
     return cfg;
 }
+
+void set_default_config(Config& cfg) {
+    cfg.n_initial_points = 5;
+    cfg.init_a = -5.0;
+    cfg.init_b = 5.0;
+    cfg.initial_step = 0.5;
+    cfg.expand_factor = 2.0;
+    cfg.max_expand = 1e6;
+    cfg.stop_type = Config::BY_ARGUMENT;
+    cfg.tol = 1e-6;
+    cfg.max_iters = 1000;
+}

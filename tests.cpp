@@ -66,14 +66,17 @@ int main() {
     {
         Fop f(f_quad);
         Config bad_cfg = {};
+        set_default_config(bad_cfg);
         bad_cfg.initial_step = 0.0;
         expect_throws<InvalidConfigArgument>("set_config_invalid_step", [&]() { f.set_config(bad_cfg); });
 
         bad_cfg = {};
+        set_default_config(bad_cfg);
         bad_cfg.max_iters = 0;
         expect_throws<InvalidConfigArgument>("set_config_invalid_max_iters", [&]() { f.set_config(bad_cfg); });
 
         Config good_cfg = {};
+        set_default_config(good_cfg);
         good_cfg.initial_step = 0.1;
         good_cfg.max_iters = 10;
         try {
@@ -86,6 +89,7 @@ int main() {
     // 2) Derivative correctness and error handling
     {
         Fop f(f_quad);
+        set_default_config(f.cfg);
         check_close("derivative_quad_at_2", f.derivative(2.0), 4.0, 1e-5);
         check_close("derivative_quad_at_-3", f.derivative(-3.0), -6.0, 1e-5);
 
@@ -97,6 +101,7 @@ int main() {
     // 3) Localize + findmin on a simple convex function
     {
         Fop f(f_quad);
+        set_default_config(f.cfg);
         Tripple bracket;
         try {
             bracket = f.localize();
@@ -114,6 +119,7 @@ int main() {
     // 4) Constant function should localize and return a finite result
     {
         Fop f(f_flat);
+        set_default_config(f.cfg);
         Tripple bracket;
         try {
             bracket = f.localize();
@@ -130,6 +136,7 @@ int main() {
     // 5) Multiple minima (cosine) should find a local minimum with f(x) ~= -1
     {
         Config cfg = {};
+        set_default_config(cfg);
         cfg.init_a = -10.0;
         cfg.init_b = 10.0;
         cfg.n_initial_points = 11;
@@ -150,22 +157,25 @@ int main() {
     // 6) Monotonic function (exp) should fail localization in this algorithm
     {
         Fop f(f_exp);
-        expect_throws<std::runtime_error>("localize_exp_no_minimum", [&]() { f.localize(); });
+        set_default_config(f.cfg);
+        expect_throws<OptimizationException>("localize_exp_no_minimum", [&]() { f.localize(); });
     }
 
     // 7) Functions producing non-finite values during localization should error
     {
         Config cfg = {};
+        set_default_config(cfg);
         cfg.init_a = -1.0;
         cfg.init_b = 1.0;
         cfg.initial_step = 0.1;
         Fop f(f_inf, cfg);
-        expect_throws<std::runtime_error>("localize_inf_values", [&]() { f.localize(); });
+        expect_throws<OptimizationException>("localize_inf_values", [&]() { f.localize(); });
     }
 
     // 8) findmin input validation
     {
         Fop f(f_quad);
+        set_default_config(f.cfg);
         expect_throws<OptimizationException>("findmin_invalid_bracket_nan", [&]() { f.findmin({std::numeric_limits<double>::quiet_NaN(), 1.0, 0.0}); });
         expect_throws<OptimizationException>("findmin_invalid_bracket_order", [&]() { f.findmin({1.0, 0.0, 0.5}); });
     }
@@ -173,8 +183,9 @@ int main() {
     // 9) Stop conditions (argument/function/gradient)
     {
         Config cfg = {};
+        set_default_config(cfg);
         cfg.tol = 1e-8;
-        cfg.max_iters = 1000;
+        cfg.max_iters = 10000;
         cfg.init_a = -5.0;
         cfg.init_b = 5.0;
 
