@@ -31,12 +31,12 @@ void Fop::check_cfg(Config cfg_) {
 }
 
 Fop::Fop(double (*fp_)(double x)) {
-    if (fp_ == nullptr) throw ObjectiveFunctionException("objective function pointer is null");
+    if (fp_ == nullptr) throw ObjectiveFunctionPointerException("objective function pointer is null");
     this->fp = fp_;
 }
 
 Fop::Fop(double (*fp_)(double x), const Config& cfg_) {
-    if (fp_ == nullptr) throw ObjectiveFunctionException("objective function pointer is null");
+    if (fp_ == nullptr) throw ObjectiveFunctionPointerException("objective function pointer is null");
     this->check_cfg(cfg_);
     this->fp = fp_;
     this->cfg = cfg_;
@@ -48,29 +48,29 @@ void Fop::set_config(const Config& cfg_) {
 }
 
 double Fop::derivative(double x, double h) const {
-    if (fp == nullptr) throw ObjectiveFunctionException("objective function pointer is null");
-    if (!(h > 0.0)) throw InvalidConfigArgument("h for derivative must be > 0");
+    if (fp == nullptr) throw ObjectiveFunctionPointerException("objective function pointer is null");
+    if (!(h > 0.0)) throw DerivativeException("h for derivative must be > 0");
 
     double left, right;
     try {
         left = fp(x - h);
         right = fp(x + h);
     } catch (const std::exception& e) {
-        throw ObjectiveFunctionException("objective function threw an exception while computing derivative: " + std::string(e.what()));
+        throw ObjectiveFunctionEvaluationException("objective function threw an exception while computing derivative: " + std::string(e.what()));
     }
 
     if (!std::isfinite(left) || !std::isfinite(right)) {
-        throw std::runtime_error("non-finite value returned by objective function while computing derivative");
+        throw DerivativeException("non-finite value returned by objective function while computing derivative");
     }
 
     double denom = 2.0 * h;
     double res = (right - left) / denom;
-    if (!std::isfinite(res)) throw std::runtime_error("derivative is non-finite");
+    if (!std::isfinite(res)) throw DerivativeException("derivative is non-finite");
     return res;
 }
 
 Tripple Fop::localize() {
-    if (fp == nullptr) throw ObjectiveFunctionException("objective function pointer is null");
+    if (fp == nullptr) throw ObjectiveFunctionPointerException("objective function pointer is null");
     this->check_cfg(cfg);
 
     double A = cfg.init_a;
@@ -84,8 +84,6 @@ Tripple Fop::localize() {
 
     double global_left = A - cfg.max_expand;
     double global_right = B + cfg.max_expand;
-
-    const int MAX_EXPAND_ITER = 1000;
 
     for (int i = 0; i < N; ++i) {
         double xi;
@@ -109,7 +107,7 @@ Tripple Fop::localize() {
                 cr = fp(right);
                 cx = fp(xi);
             } catch (const std::exception& e) {
-                throw ObjectiveFunctionException("objective function threw an exception during localization: " + std::string(e.what()));
+                throw ObjectiveFunctionEvaluationException("objective function threw an exception during localization: " + std::string(e.what()));
             }
 
             if (!std::isfinite(cl) || !std::isfinite(cr) || !std::isfinite(cx)) {
@@ -134,7 +132,7 @@ Tripple Fop::localize() {
     }
 
     if (!found) {
-        throw std::runtime_error("Failed to localize a minimum within the specified parameters.");
+        throw OptimizationException("Failed to localize a minimum within the specified parameters");
     }
 
     Tripple t{best_a, best_b, best_c};
@@ -142,12 +140,12 @@ Tripple Fop::localize() {
 }
 
 double Fop::findmin(Tripple bracket) {
-    if (fp == nullptr) throw std::runtime_error("objective function pointer is null");
+    if (fp == nullptr) throw ObjectiveFunctionPointerException("objective function pointer is null");
 
     double a = bracket.a;
     double b = bracket.b;
-    if (!std::isfinite(a) || !std::isfinite(b)) throw std::invalid_argument("bracket endpoints must be finite");
-    if (a >= b) throw std::invalid_argument("bracket.a must be < bracket.b");
+    if (!std::isfinite(a) || !std::isfinite(b)) throw OptimizationException("bracket endpoints must be finite");
+    if (a >= b) throw OptimizationException("invalid bracket: a must be less than b");
 
     const double phi = (std::sqrt(5.0) - 1.0) / 2.0;
     double c = b - phi * (b - a);
@@ -158,10 +156,10 @@ double Fop::findmin(Tripple bracket) {
         fc = fp(c);
         fd = fp(d);
     } catch (const std::exception& e) {
-        throw ObjectiveFunctionException("objective function threw an exception during findmin initialization: " + std::string(e.what()));
+        throw ObjectiveFunctionEvaluationException("objective function threw an exception during findmin initialization: " + std::string(e.what()));
     }
     if (!std::isfinite(fc) || !std::isfinite(fd)) {
-        throw std::runtime_error("objective function returned non-finite value at initial points");
+        throw OptimizationException("objective function returned non-finite value at initial points");
     }
 
     double prev_best = std::numeric_limits<double>::infinity();
@@ -176,7 +174,7 @@ double Fop::findmin(Tripple bracket) {
             try {
                 fc = fp(c);
             } catch (const std::exception& e) {
-                throw ObjectiveFunctionException("objective function threw an exception during findmin iteration: " + std::string(e.what()));
+                throw ObjectiveFunctionEvaluationException("objective function threw an exception during findmin iteration: " + std::string(e.what()));
             }
         } else {
             a = c;
@@ -186,12 +184,12 @@ double Fop::findmin(Tripple bracket) {
             try {
                 fd = fp(d);
             } catch (const std::exception& e) {
-                throw ObjectiveFunctionException("objective function threw an exception during findmin iteration: " + std::string(e.what()));
+                throw ObjectiveFunctionEvaluationException("objective function threw an exception during findmin iteration: " + std::string(e.what()));
             }
         }
 
         if (!std::isfinite(fc) || !std::isfinite(fd)) {
-            throw std::runtime_error("objective function returned non-finite value during findmin iterations");
+            throw OptimizationException("objective function returned non-finite value during findmin iterations");
         }
 
         double xbest = (fc < fd) ? c : d;

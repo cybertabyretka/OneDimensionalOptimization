@@ -106,7 +106,7 @@ Config load_config_from_xml(const std::string& filename) {
         else if (stoptype == "function" || stoptype == "BY_FUNCTION" || stoptype == "1") cfg.stop_type = Config::BY_FUNCTION;
         else if (stoptype == "gradient" || stoptype == "BY_GRADIENT" || stoptype == "2") cfg.stop_type = Config::BY_GRADIENT;
         else {
-            std::cerr << "Warning: unknown stop_type '" << stoptype << "'. Using default.\n";
+            throw ConfigParseException("Failed to read stop_type from config");
         }
     } else {
         throw ConfigParseException("Failed to read stop_type from config");
