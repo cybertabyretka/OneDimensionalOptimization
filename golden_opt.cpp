@@ -36,11 +36,23 @@ void Fop::check_cfg(Config cfg_) {
     }
 }
 
+/*
+ * @brief Constructor for the Fop class that initializes the objective function pointer and validates it.
+ * @param fp_ Pointer to the objective function to be optimized
+ * @throws ObjectiveFunctionPointerException if the provided function pointer is null
+ */
 Fop::Fop(double (*fp_)(double x)) {
     if (fp_ == nullptr) throw ObjectiveFunctionPointerException("objective function pointer is null");
     this->fp = fp_;
 }
 
+/*
+ * @brief Constructor for the Fop class that initializes the objective function pointer and configuration parameters, and validates them.
+ * @param fp_ Pointer to the objective function to be optimized
+ * @param cfg_ Configuration parameters for the optimization algorithm
+ * @throws ObjectiveFunctionPointerException if the provided function pointer is null
+ * @throws InvalidConfigArgument if any configuration parameter is invalid
+ */
 Fop::Fop(double (*fp_)(double x), const Config& cfg_) {
     if (fp_ == nullptr) throw ObjectiveFunctionPointerException("objective function pointer is null");
     this->check_cfg(cfg_);
@@ -48,6 +60,12 @@ Fop::Fop(double (*fp_)(double x), const Config& cfg_) {
     this->cfg = cfg_;
 }
 
+/*
+ * @brief Method to update or initialize the configuration parameters for the optimization algorithm, with validation.
+ * @param cfg_ The new configuration parameters to set
+ * @return void
+ * @throws InvalidConfigArgument if any configuration parameter is invalid
+ */
 void Fop::set_config(const Config& cfg_) {
     this->check_cfg(cfg_);
     this->cfg = cfg_;
