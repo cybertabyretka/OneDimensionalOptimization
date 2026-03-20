@@ -1,42 +1,42 @@
 #include "golden_opt.h"
 #include "config_reader.h"
+#include "exceptions/optimization_exceptions.h"
 #include <cmath>
 #include <limits>
 #include <iostream>
 #include <algorithm>
 
-bool Fop::check_cfg(Config cfg_) {
+void Fop::check_cfg(Config cfg_) {
     if (cfg_.n_initial_points < 1) {
-        throw std::invalid_argument("n_initial_points must be >= 1");
+        throw InvalidConfigArgument("n_initial_points must be >= 1");
     }
     if (cfg_.initial_step <= 0) {
-        throw std::invalid_argument("initial_step must be > 0");
+        throw InvalidConfigArgument("initial_step must be > 0");
     }
     if (cfg_.expand_factor <= 1.0) {
-        throw std::invalid_argument("expand_factor must be > 1.0");
+        throw InvalidConfigArgument("expand_factor must be > 1.0");
     }
     if (cfg_.max_expand <= 0) {
-        throw std::invalid_argument("max_expand must be > 0");
+        throw InvalidConfigArgument("max_expand must be > 0");
     }
     if (cfg_.tol <= 0) {
-        throw std::invalid_argument("tol must be > 0");
+        throw InvalidConfigArgument("tol must be > 0");
     }
     if (cfg_.max_iters <= 0) {
-        throw std::invalid_argument("max_iters must be > 0");
+        throw InvalidConfigArgument("max_iters must be > 0");
     }
     if (cfg_.max_iters > 1e8) {
-        throw std::invalid_argument("max_iters is unreasonably large");
+        throw InvalidConfigArgument("max_iters is unreasonably large");
     }
-    return true;
 }
 
 Fop::Fop(double (*fp_)(double x)) {
-    if (fp_ == nullptr) throw std::invalid_argument("function pointer fp_ must not be null");
+    if (fp_ == nullptr) throw ObjectiveFunctionException("objective function pointer is null");
     this->fp = fp_;
 }
 
 Fop::Fop(double (*fp_)(double x), const Config& cfg_) {
-    if (fp_ == nullptr) throw std::invalid_argument("function pointer fp_ must not be null");
+    if (fp_ == nullptr) throw ObjectiveFunctionException("objective function pointer is null");
     this->check_cfg(cfg_);
     this->fp = fp_;
     this->cfg = cfg_;
@@ -48,15 +48,15 @@ void Fop::set_config(const Config& cfg_) {
 }
 
 double Fop::derivative(double x, double h) const {
-    if (fp == nullptr) throw std::runtime_error("objective function pointer is null");
-    if (!(h > 0.0)) throw std::invalid_argument("h for derivative must be > 0");
+    if (fp == nullptr) throw ObjectiveFunctionException("objective function pointer is null");
+    if (!(h > 0.0)) throw InvalidConfigArgument("h for derivative must be > 0");
 
     double left, right;
     try {
         left = fp(x - h);
         right = fp(x + h);
     } catch (const std::exception& e) {
-        throw std::runtime_error("objective function threw an exception while computing derivative: " + std::string(e.what()));
+        throw ObjectiveFunctionException("objective function threw an exception while computing derivative: " + std::string(e.what()));
     }
 
     if (!std::isfinite(left) || !std::isfinite(right)) {
@@ -70,12 +70,12 @@ double Fop::derivative(double x, double h) const {
 }
 
 Tripple Fop::localize() {
-    if (fp == nullptr) throw std::runtime_error("objective function pointer is null");
+    if (fp == nullptr) throw ObjectiveFunctionException("objective function pointer is null");
     this->check_cfg(cfg);
 
     double A = cfg.init_a;
     double B = cfg.init_b;
-    if (!std::isfinite(A) || !std::isfinite(B)) throw std::invalid_argument("init_a or init_b is not finite");
+    if (!std::isfinite(A) || !std::isfinite(B)) throw InvalidConfigArgument("init_a or init_b is not finite");
     if (A > B) std::swap(A, B);
 
     int N = std::max(1, cfg.n_initial_points);
@@ -109,7 +109,7 @@ Tripple Fop::localize() {
                 cr = fp(right);
                 cx = fp(xi);
             } catch (const std::exception& e) {
-                throw std::runtime_error("objective function threw an exception during localization: " + std::string(e.what()));
+                throw ObjectiveFunctionException("objective function threw an exception during localization: " + std::string(e.what()));
             }
 
             if (!std::isfinite(cl) || !std::isfinite(cr) || !std::isfinite(cx)) {
@@ -158,7 +158,7 @@ double Fop::findmin(Tripple bracket) {
         fc = fp(c);
         fd = fp(d);
     } catch (const std::exception& e) {
-        throw std::runtime_error("objective function threw an exception during findmin initialization: " + std::string(e.what()));
+        throw ObjectiveFunctionException("objective function threw an exception during findmin initialization: " + std::string(e.what()));
     }
     if (!std::isfinite(fc) || !std::isfinite(fd)) {
         throw std::runtime_error("objective function returned non-finite value at initial points");
@@ -176,7 +176,7 @@ double Fop::findmin(Tripple bracket) {
             try {
                 fc = fp(c);
             } catch (const std::exception& e) {
-                throw std::runtime_error("objective function threw an exception during findmin iteration: " + std::string(e.what()));
+                throw ObjectiveFunctionException("objective function threw an exception during findmin iteration: " + std::string(e.what()));
             }
         } else {
             a = c;
@@ -186,7 +186,7 @@ double Fop::findmin(Tripple bracket) {
             try {
                 fd = fp(d);
             } catch (const std::exception& e) {
-                throw std::runtime_error("objective function threw an exception during findmin iteration: " + std::string(e.what()));
+                throw ObjectiveFunctionException("objective function threw an exception during findmin iteration: " + std::string(e.what()));
             }
         }
 

@@ -1,24 +1,15 @@
 #include "config_reader.h"
+#include "exceptions/config_exceptions.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
 
 Config load_config_from_xml(const std::string& filename) {
     Config cfg;
-    cfg.n_initial_points = 5;
-    cfg.init_a = -1.0;
-    cfg.init_b = 1.0;
-    cfg.initial_step = 0.01;
-    cfg.expand_factor = 2.0;
-    cfg.max_expand = 10.0;
-    cfg.max_iters = 1000;
-    cfg.tol = 1e-8;
-    cfg.stop_type = Config::BY_ARGUMENT;
 
     std::ifstream ifs(filename);
     if (!ifs.is_open()) {
-        std::cerr << "Warning: could not open config file '" << filename << "'. Using defaults.\n";
-        return cfg;
+        throw ConfigFileOpenException(filename);
     }
     std::stringstream ss;
     ss << ifs.rdbuf();
@@ -72,13 +63,41 @@ Config load_config_from_xml(const std::string& filename) {
 
     double tmpd;
     int tmpi;
-    if (get_tag_int("n_initial_points", tmpi)) cfg.n_initial_points = tmpi;
-    if (get_tag_double("init_a", tmpd)) cfg.init_a = tmpd;
-    if (get_tag_double("init_b", tmpd)) cfg.init_b = tmpd;
-    if (get_tag_double("initial_step", tmpd)) cfg.initial_step = tmpd;
-    if (get_tag_double("expand_factor", tmpd)) cfg.expand_factor = tmpd;
-    if (get_tag_double("max_expand", tmpd)) cfg.max_expand = tmpd;
-    if (get_tag_int("max_iters", tmpi)) cfg.max_iters = tmpi;
+    if (get_tag_int("n_initial_points", tmpi)) {
+        cfg.n_initial_points = tmpi;
+    } else {
+        throw ConfigParseException("Failed to read n_initial_points from config");
+    }
+    if (get_tag_double("init_a", tmpd)) {
+        cfg.init_a = tmpd;
+    } else {
+        throw ConfigParseException("Failed to read init_a from config");
+    }
+    if (get_tag_double("init_b", tmpd)) {
+        cfg.init_b = tmpd;
+    } else {
+        throw ConfigParseException("Failed to read init_b from config");
+    }
+    if (get_tag_double("initial_step", tmpd)) {
+        cfg.initial_step = tmpd;
+    } else {
+        throw ConfigParseException("Failed to read initial_step from config");
+    }
+    if (get_tag_double("expand_factor", tmpd)) {
+        cfg.expand_factor = tmpd;
+    } else {
+        throw ConfigParseException("Failed to read expand_factor from config");
+    }
+    if (get_tag_double("max_expand", tmpd)) {
+        cfg.max_expand = tmpd;
+    } else {
+        throw ConfigParseException("Failed to read max_expand from config");
+    }
+    if (get_tag_int("max_iters", tmpi)) {
+        cfg.max_iters = tmpi;
+    } else {
+        throw ConfigParseException("Failed to read max_iters from config");
+    }
     if (get_tag_double("tol", tmpd)) cfg.tol = tmpd;
 
     std::string stoptype;
@@ -89,14 +108,8 @@ Config load_config_from_xml(const std::string& filename) {
         else {
             std::cerr << "Warning: unknown stop_type '" << stoptype << "'. Using default.\n";
         }
+    } else {
+        throw ConfigParseException("Failed to read stop_type from config");
     }
-
-    if (cfg.n_initial_points < 1) cfg.n_initial_points = 1;
-    if (cfg.initial_step <= 0) cfg.initial_step = 1e-6;
-    if (cfg.expand_factor <= 1.0) cfg.expand_factor = 2.0;
-    if (cfg.max_expand <= 0) cfg.max_expand = std::max(1.0, cfg.initial_step);
-    if (cfg.tol <= 0) cfg.tol = 1e-8;
-    if (cfg.max_iters <= 0) cfg.max_iters = 1000;
-
     return cfg;
 }
