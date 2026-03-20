@@ -61,17 +61,17 @@ double f_cos(double x) { return std::cos(x); }
 
 int main() {
     // 1) Constructor & configuration validation
-    expect_throws<std::runtime_error>("constructor_null_fp", []() { Fop f(nullptr); });
+    expect_throws<ObjectiveFunctionPointerException>("constructor_null_fp", []() { Fop f(nullptr); });
 
     {
         Fop f(f_quad);
         Config bad_cfg = {};
         bad_cfg.initial_step = 0.0;
-        expect_throws<std::runtime_error>("set_config_invalid_step", [&]() { f.set_config(bad_cfg); });
+        expect_throws<InvalidConfigArgument>("set_config_invalid_step", [&]() { f.set_config(bad_cfg); });
 
         bad_cfg = {};
         bad_cfg.max_iters = 0;
-        expect_throws<std::runtime_error>("set_config_invalid_max_iters", [&]() { f.set_config(bad_cfg); });
+        expect_throws<InvalidConfigArgument>("set_config_invalid_max_iters", [&]() { f.set_config(bad_cfg); });
 
         Config good_cfg = {};
         good_cfg.initial_step = 0.1;
@@ -89,9 +89,9 @@ int main() {
         check_close("derivative_quad_at_2", f.derivative(2.0), 4.0, 1e-5);
         check_close("derivative_quad_at_-3", f.derivative(-3.0), -6.0, 1e-5);
 
-        expect_throws<std::runtime_error>("derivative_invalid_h", [&]() { f.derivative(1.0, 0.0); });
-        expect_throws<ObjectiveFunctionException>("derivative_nonfinite", [&]() { Fop fn(f_nan); fn.derivative(0.0); });
-        expect_throws<ObjectiveFunctionException>("derivative_function_exception", [&]() { Fop ft(f_throw); ft.derivative(0.0); });
+        expect_throws<DerivativeException>("derivative_invalid_h", [&]() { f.derivative(1.0, 0.0); });
+        expect_throws<DerivativeException>("derivative_nonfinite", [&]() { Fop fn(f_nan); fn.derivative(0.0); });
+        expect_throws<ObjectiveFunctionEvaluationException>("derivative_function_exception", [&]() { Fop ft(f_throw); ft.derivative(0.0); });
     }
 
     // 3) Localize + findmin on a simple convex function
@@ -166,8 +166,8 @@ int main() {
     // 8) findmin input validation
     {
         Fop f(f_quad);
-        expect_throws<std::runtime_error>("findmin_invalid_bracket_nan", [&]() { f.findmin({std::numeric_limits<double>::quiet_NaN(), 1.0, 0.0}); });
-        expect_throws<std::runtime_error>("findmin_invalid_bracket_order", [&]() { f.findmin({1.0, 0.0, 0.5}); });
+        expect_throws<OptimizationException>("findmin_invalid_bracket_nan", [&]() { f.findmin({std::numeric_limits<double>::quiet_NaN(), 1.0, 0.0}); });
+        expect_throws<OptimizationException>("findmin_invalid_bracket_order", [&]() { f.findmin({1.0, 0.0, 0.5}); });
     }
 
     // 9) Stop conditions (argument/function/gradient)
