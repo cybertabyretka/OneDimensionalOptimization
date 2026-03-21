@@ -42,23 +42,21 @@ jobs:
           # Windows has g++ via MSYS2 or similar, but assuming it's available
           echo "Using g++"
 
-      - name: Build via Makefile on Windows
+      - name: Build on Windows
         if: matrix.os == 'windows-latest'
+        shell: pwsh
         run: |
-          mingw32-make all
-          copy ota.exe ota-windows.exe
+          g++ -std=c++11 -Wall -Wextra -O2 main.cpp function_parser.cpp config_reader.cpp golden_opt.cpp -o ota-windows.exe
 
-      - name: Build via Makefile on Ubuntu
+      - name: Build on Ubuntu
         if: matrix.os == 'ubuntu-latest'
         run: |
-          make all
-          cp ota.exe ota-linux
+          g++ -std=c++11 -Wall -Wextra -O2 main.cpp function_parser.cpp config_reader.cpp golden_opt.cpp -o ota-linux
 
-      - name: Build via Makefile on macOS
+      - name: Build on macOS
         if: matrix.os == 'macos-latest'
         run: |
-          make all
-          cp ota.exe ota-darwin
+          g++ -std=c++11 -Wall -Wextra -O2 main.cpp function_parser.cpp config_reader.cpp golden_opt.cpp -o ota-darwin
 
       - name: Package source archives
         run: |
@@ -66,23 +64,37 @@ jobs:
           git archive --format=tar HEAD | gzip > ota-source-${{ github.ref_name }}.tar.gz
           git archive --format=zip -o ota-source-${{ github.ref_name }}.zip HEAD
 
-      - name: Check artifacts
+      - name: Check source archives
         run: |
-          echo "= list artifacts ="
+          echo "= list source archives ="
           ls -la ota-source-${{ github.ref_name }}.tar.gz
           ls -la ota-source-${{ github.ref_name }}.zip
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            ls -la ota-windows.exe
-          elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            ls -la ota-linux
-          else
-            ls -la ota-darwin
-          fi
+
+      - name: Check Windows artifact
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          echo "= list windows artifact ="
+          ls -la ota-windows.exe
+
+      - name: Check Linux artifact
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          echo "= list linux artifact ="
+          ls -la ota-linux
+
+      - name: Check macOS artifact
+        if: matrix.os == 'macos-latest'
+        run: |
+          echo "= list macos artifact ="
+          ls -la ota-darwin
 
       - name: Upload Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ${{ matrix.output }}
+            ota-windows.exe
+            ota-linux
+            ota-darwin
             ota-source-${{ github.ref_name }}.tar.gz
             ota-source-${{ github.ref_name }}.zip
