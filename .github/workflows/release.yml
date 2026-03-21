@@ -59,12 +59,14 @@ jobs:
           g++ -std=c++11 -Wall -Wextra -O2 main.cpp function_parser.cpp config_reader.cpp golden_opt.cpp -o ota-darwin
 
       - name: Package source archives
+        shell: bash
         run: |
           # Use git archive to avoid "file changed as we read it" caused by files being written during build.
           git archive --format=tar HEAD | gzip > ota-source-${{ github.ref_name }}.tar.gz
           git archive --format=zip -o ota-source-${{ github.ref_name }}.zip HEAD
 
       - name: Check source archives
+        shell: bash
         run: |
           echo "= list source archives ="
           ls -la ota-source-${{ github.ref_name }}.tar.gz
@@ -72,19 +74,21 @@ jobs:
 
       - name: Check Windows artifact
         if: matrix.os == 'windows-latest'
-        shell: pwsh
+        shell: bash
         run: |
           echo "= list windows artifact ="
           ls -la ota-windows.exe
 
       - name: Check Linux artifact
         if: matrix.os == 'ubuntu-latest'
+        shell: bash
         run: |
           echo "= list linux artifact ="
           ls -la ota-linux
 
       - name: Check macOS artifact
         if: matrix.os == 'macos-latest'
+        shell: bash
         run: |
           echo "= list macos artifact ="
           ls -la ota-darwin
