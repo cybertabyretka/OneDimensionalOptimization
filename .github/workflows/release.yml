@@ -60,12 +60,9 @@ jobs:
 
       - name: Package source archives
         run: |
-          tar czf ota-source-${{ github.ref_name }}.tar.gz --exclude=".git" --exclude="*.o" .
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            powershell -Command "Compress-Archive -Path . -CompressionLevel Optimal -DestinationPath ota-source-${{ github.ref_name }}.zip -Force"
-          else
-            zip -r ota-source-${{ github.ref_name }}.zip . -x "*.git*" "*.o"
-          fi
+          # Use git archive to avoid "file changed as we read it" caused by files being written during build.
+          git archive --format=tar HEAD | gzip > ota-source-${{ github.ref_name }}.tar.gz
+          git archive --format=zip -o ota-source-${{ github.ref_name }}.zip HEAD
 
       - name: Check artifacts
         run: |
