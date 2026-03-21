@@ -1,8 +1,11 @@
 #include "golden_opt.hpp"
 #include "config_reader.hpp"
 #include "function_parser.hpp"
+
 #include "exceptions/config_exceptions.hpp"
 #include "exceptions/optimization_exceptions.hpp"
+#include "exceptions/terminal_app_exceptions.hpp"
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -64,31 +67,25 @@ int main(int argc, char* argv[]) {
         std::string function_path = argv[3];
 
         try {
-            // Load config
             Config cfg = load_config_from_xml(config_path);
             std::cout << "Config loaded successfully\n";
 
-            // Load function
             std::ifstream func_file(function_path);
             if (!func_file.is_open()) {
-                throw std::runtime_error("Could not open function file: " + function_path);
+                throw TerminalAppException("Could not open function file: " + function_path);
             }
             std::string latex_expr;
             std::getline(func_file, latex_expr);
             func_file.close();
 
-            // Parse function
             double (*func)(double) = parse_function(latex_expr);
             std::cout << "Function parsed: " << latex_expr << "\n";
 
-            // Create optimizer
             Fop optimizer(func, cfg);
 
-            // Localize minimum
             Tripple bracket = optimizer.localize();
             std::cout << "Bracket found: [" << bracket.a << ", " << bracket.b << "] with c=" << bracket.c << "\n";
 
-            // Find minimum
             double min_x = optimizer.findmin(bracket);
             double min_y = func(min_x);
             std::cout << "Minimum found at x = " << min_x << ", f(x) = " << min_y << "\n";

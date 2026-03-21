@@ -1,4 +1,5 @@
 #include "function_parser.hpp"
+#include "exceptions/latex_parser_exceptions.hpp"
 #include <string>
 #include <vector>
 #include <sstream>
@@ -6,10 +7,6 @@
 #include <cmath>
 #include <stdexcept>
 #include <algorithm>
-
-// Simple polynomial parser for LaTeX-style expressions
-// Supports: a x^{n} + b x + c
-// Where a, b, c are doubles, n is int
 
 struct Term {
     double coeff;
@@ -19,31 +16,25 @@ struct Term {
 Term parse_term(const std::string& term_str) {
     Term t{0.0, 0};
     std::string s = term_str;
-    // Remove spaces
     s.erase(std::remove_if(s.begin(), s.end(), ::isspace), s.end());
 
-    // Check if starts with -
     bool negative = false;
     if (!s.empty() && s[0] == '-') {
         negative = true;
         s = s.substr(1);
     }
 
-    // Check if contains x
     size_t x_pos = s.find('x');
     if (x_pos == std::string::npos) {
-        // Constant
         try {
             t.coeff = std::stod(s);
         } catch (...) {
-            throw std::runtime_error("Invalid constant: " + s);
+            throw LaTeXParserException("Invalid constant: " + s);
         }
         t.power = 0;
     } else {
-        // Has x
         std::string coeff_str = s.substr(0, x_pos);
         double coeff = coeff_str.empty() || coeff_str == "+" ? 1.0 : std::stod(coeff_str);
-        // Check for ^{power}
         size_t power_start = s.find("^{", x_pos);
         if (power_start != std::string::npos) {
             size_t power_end = s.find("}", power_start);
@@ -52,10 +43,10 @@ Term parse_term(const std::string& term_str) {
                 try {
                     t.power = std::stoi(power_str);
                 } catch (...) {
-                    throw std::runtime_error("Invalid power: " + power_str);
+                    throw LaTeXParserException("Invalid power: " + power_str);
                 }
             } else {
-                throw std::runtime_error("Invalid LaTeX power syntax: missing }");
+                throw LaTeXParserException("Invalid LaTeX power syntax: missing }");
             }
         } else {
             t.power = 1;
@@ -69,13 +60,11 @@ Term parse_term(const std::string& term_str) {
 std::vector<Term> parse_polynomial(const std::string& expr) {
     std::vector<Term> terms;
     std::string s = expr;
-    // Replace ' -' with '+-' to handle negative terms
     size_t pos = 0;
     while ((pos = s.find(" -", pos)) != std::string::npos) {
         s.replace(pos, 2, "+-");
         pos += 2;
     }
-    // Now split by +
     std::stringstream ss(s);
     std::string token;
     while (std::getline(ss, token, '+')) {
