@@ -12,7 +12,7 @@
  * @return void
  * @throws InvalidConfigArgument if any configuration parameter is invalid (e.g. non-positive step size, non-positive max_iters, etc.)
  */
-void Fop::check_cfg(Config cfg_) {
+void Fop::check_cfg(Config cfg_) const {
     if (cfg_.n_initial_points < 1) {
         throw InvalidConfigArgument("n_initial_points must be >= 1");
     }
@@ -73,7 +73,7 @@ void Fop::set_config(const Config& cfg_) {
 
 double Fop::derivative(double x, double h) const {
     if (fp == nullptr) throw ObjectiveFunctionPointerException("objective function pointer is null");
-    if (!(h > 0.0)) throw DerivativeException("h for derivative must be > 0");
+    if (!(h > 0.0)) throw InvalidInputDerivativeArgument("h for derivative must be > 0");
 
     double left, right;
     try {
@@ -84,12 +84,11 @@ double Fop::derivative(double x, double h) const {
     }
 
     if (!std::isfinite(left) || !std::isfinite(right)) {
-        throw DerivativeException("non-finite value returned by objective function while computing derivative");
+        throw InvalidInputDerivativeArgument("non-finite value returned by objective function while computing derivative");
     }
 
     double denom = 2.0 * h;
     double res = (right - left) / denom;
-    if (!std::isfinite(res)) throw DerivativeException("derivative is non-finite");
     return res;
 }
 
@@ -99,7 +98,7 @@ Tripple Fop::localize() {
 
     double A = cfg.init_a;
     double B = cfg.init_b;
-    if (!std::isfinite(A) || !std::isfinite(B)) throw InvalidConfigArgument("init_a or init_b is not finite");
+    if (!std::isfinite(A) || !std::isfinite(B)) throw InvalidInputOptimizationArgument("init_a or init_b is not finite");
     if (A > B) std::swap(A, B);
 
     int N = std::max(1, cfg.n_initial_points);
@@ -168,8 +167,8 @@ double Fop::findmin(Tripple bracket) {
 
     double a = bracket.a;
     double b = bracket.b;
-    if (!std::isfinite(a) || !std::isfinite(b)) throw OptimizationException("bracket endpoints must be finite");
-    if (a >= b) throw OptimizationException("invalid bracket: a must be less than b");
+    if (!std::isfinite(a) || !std::isfinite(b)) throw InvalidInputOptimizationArgument("bracket endpoints must be finite");
+    if (a >= b) throw InvalidInputOptimizationArgument("invalid bracket: a must be less than b");
 
     const double phi = (std::sqrt(5.0) - 1.0) / 2.0;
     double c = b - phi * (b - a);
@@ -183,7 +182,7 @@ double Fop::findmin(Tripple bracket) {
         throw ObjectiveFunctionEvaluationException("objective function threw an exception during findmin initialization: " + std::string(e.what()));
     }
     if (!std::isfinite(fc) || !std::isfinite(fd)) {
-        throw OptimizationException("objective function returned non-finite value at initial points");
+        throw InvalidInputOptimizationArgument("objective function returned non-finite value at initial points");
     }
 
     double prev_best = std::numeric_limits<double>::infinity();
@@ -213,7 +212,7 @@ double Fop::findmin(Tripple bracket) {
         }
 
         if (!std::isfinite(fc) || !std::isfinite(fd)) {
-            throw OptimizationException("objective function returned non-finite value during findmin iterations");
+            throw InvalidInputOptimizationArgument("objective function returned non-finite value during findmin iterations");
         }
 
         double xbest = (fc < fd) ? c : d;
@@ -225,6 +224,9 @@ double Fop::findmin(Tripple bracket) {
             if (std::fabs(fbest - prev_best) < cfg.tol) return xbest;
         } else if (cfg.stop_type == Config::BY_GRADIENT) {
             double g = derivative(xbest);
+            if (!std::isfinite(g)) {
+                throw InvalidInputOptimizationArgument("non-finite gradient value during findmin iterations");
+            }
             if (std::fabs(g) < cfg.tol) return xbest;
         } else {
             if (std::fabs(b - a) < cfg.tol) return xbest;

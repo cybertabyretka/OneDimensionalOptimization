@@ -10,15 +10,27 @@ public:
         : std::runtime_error(message) {}
 };
 
+class InvalidInputDerivativeArgument : public DerivativeException {
+public:
+    explicit InvalidInputDerivativeArgument(const std::string& message)
+        : DerivativeException(message) {}
+};
+
+class InvalidConfigArgument : public std::runtime_error {
+public:
+    explicit InvalidConfigArgument(const std::string& message)
+        : std::runtime_error(message) {}
+};
+
 class OptimizationException : public std::runtime_error {
 public:
     explicit OptimizationException(const std::string& message)
         : std::runtime_error(message) {}
 };
 
-class InvalidConfigArgument : public OptimizationException {
+class InvalidInputOptimizationArgument : public  OptimizationException {
 public:
-    explicit InvalidConfigArgument(const std::string& message)
+    explicit InvalidInputOptimizationArgument(const std::string& message)
         : OptimizationException(message) {}
 };
 

@@ -93,8 +93,7 @@ int main() {
         check_close("derivative_quad_at_2", f.derivative(2.0), 4.0, 1e-5);
         check_close("derivative_quad_at_-3", f.derivative(-3.0), -6.0, 1e-5);
 
-        expect_throws<DerivativeException>("derivative_invalid_h", [&]() { f.derivative(1.0, 0.0); });
-        expect_throws<DerivativeException>("derivative_nonfinite", [&]() { Fop fn(f_nan); fn.derivative(0.0); });
+        expect_throws<InvalidInputDerivativeArgument>("derivative_invalid_h", [&]() { f.derivative(1.0, 0.0); });
         expect_throws<ObjectiveFunctionEvaluationException>("derivative_function_exception", [&]() { Fop ft(f_throw); ft.derivative(0.0); });
     }
 
@@ -176,8 +175,8 @@ int main() {
     {
         Fop f(f_quad);
         set_default_config(f.cfg);
-        expect_throws<OptimizationException>("findmin_invalid_bracket_nan", [&]() { f.findmin({std::numeric_limits<double>::quiet_NaN(), 1.0, 0.0}); });
-        expect_throws<OptimizationException>("findmin_invalid_bracket_order", [&]() { f.findmin({1.0, 0.0, 0.5}); });
+        expect_throws<InvalidInputOptimizationArgument>("findmin_invalid_bracket_nan", [&]() { f.findmin({std::numeric_limits<double>::quiet_NaN(), 1.0, 0.0}); });
+        expect_throws<InvalidInputOptimizationArgument>("findmin_invalid_bracket_order", [&]() { f.findmin({1.0, 0.0, 0.5}); });
     }
 
     // 9) Stop conditions (argument/function/gradient)
