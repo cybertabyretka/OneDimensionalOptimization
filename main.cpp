@@ -14,8 +14,9 @@
 void print_general_help() {
     std::cout << "Optimization Terminal Application\n";
     std::cout << "Available commands:\n";
-    std::cout << "  findmin <config_path> <function_path>  : Find minimum of the function\n";
     std::cout << "  --help                                 : Show this help message\n";
+    std::cout << "  showexcfg                             : Show default config sample\n";
+    std::cout << "  findmin <config_path> <function_path>  : Find minimum of the function\n";
     std::cout << "  findmin --help                         : Show help for findmin command\n";
 }
 
@@ -101,6 +102,22 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
+        return 0;
+    }
+
+    if (command == "showexcfg") {
+        std::cout << "Default config sample:\n";
+        std::cout << "<Config>\n";
+        std::cout << "  <n_initial_points>5</n_initial_points>\n";
+        std::cout << "  <init_a>-5</init_a>\n";
+        std::cout << "  <init_b>5</init_b>\n";
+        std::cout << "  <initial_step>0.5</initial_step>\n";
+        std::cout << "  <expand_factor>2</expand_factor>\n";
+        std::cout << "  <max_expand>1000</max_expand>\n";
+        std::cout << "  <max_iters>1000</max_iters>\n";
+        std::cout << "  <stop_type>argument</stop_type>\n";
+        std::cout << "  <tol>1e-6</tol>\n";
+        std::cout << "</Config>\n";
         return 0;
     }
 
