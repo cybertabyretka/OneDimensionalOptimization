@@ -1,5 +1,5 @@
-#include "config_reader.h"
-#include "exceptions/config_exceptions.h"
+#include "config_reader.hpp"
+#include "exceptions/config_exceptions.hpp"
 #include <fstream>
 #include <sstream>
 #include <iostream>

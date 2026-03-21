@@ -1,5 +1,5 @@
-#include "golden_opt.h"
-#include "exceptions/optimization_exceptions.h"
+#include "golden_opt.hpp"
+#include "exceptions/optimization_exceptions.hpp"
 #include <cmath>
 #include <iostream>
 #include <iomanip>

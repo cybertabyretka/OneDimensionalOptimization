@@ -1,5 +1,5 @@
-#include "golden_opt.h"
-#include "config_reader.h"
+#include "golden_opt.hpp"
+#include "config_reader.hpp"
 #include <iostream>
 #include <vector>
 #include <cmath>
@@ -82,7 +82,7 @@ double F2_line(double t) {
 }
 
 int main() {
-    Config cfg = load_config_from_xml("config.xml");
+    Config cfg = load_config_from_xml("examples/config.xml");
 
     std::cout << "=== Task 1: 1D optimization of F1(x) (V=6) ===\n";
     cfg.n_initial_points = 201;

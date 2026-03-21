@@ -1,6 +1,6 @@
-#include "golden_opt.h"
-#include "config_reader.h"
-#include "exceptions/optimization_exceptions.h"
+#include "golden_opt.hpp"
+#include "config_reader.hpp"
+#include "exceptions/optimization_exceptions.hpp"
 #include <cmath>
 #include <limits>
 #include <iostream>

@@ -1,7 +1,7 @@
 #ifndef GOLDEN_OPT_H
 #define GOLDEN_OPT_H
 
-#include "config_reader.h"
+#include "config_reader.hpp"
 
 // Structure to hold the bracketing interval for the minimum
 struct Tripple {
