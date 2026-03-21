@@ -49,30 +49,41 @@ jobs:
           else
             make all
           fi
+          # Makefile produces ota.exe in all cases; remap for platform-named artifact
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cp ota.exe ota-windows.exe
+          elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            cp ota.exe ota-linux
+          else
+            cp ota.exe ota-darwin
+          fi
 
       - name: Package source archives
         run: |
           tar czf ota-source-${{ github.ref_name }}.tar.gz --exclude=".git" --exclude="*.o" .
-          powershell -Command "Compress-Archive -Path * -DestinationPath ota-source-${{ github.ref_name }}.zip -Force"
-
-      - name: Collect artifact
-        run: |
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            ls -la ota.exe
+            powershell -Command "Compress-Archive -Path . -CompressionLevel Optimal -DestinationPath ota-source-${{ github.ref_name }}.zip -Force"
+          else
+            zip -r ota-source-${{ github.ref_name }}.zip . -x "*.git*" "*.o"
+          fi
+
+      - name: Check artifacts
+        run: |
+          echo "= list artifacts ="
+          ls -la ota-source-${{ github.ref_name }}.tar.gz
+          ls -la ota-source-${{ github.ref_name }}.zip
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            ls -la ota-windows.exe
           elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            ls -la ota
+            ls -la ota-linux
           else
             ls -la ota-darwin
           fi
-          ls -la ota-source-${{ github.ref_name }}.tar.gz
-          ls -la ota-source-${{ github.ref_name }}.zip
 
       - name: Upload Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ota.exe
-            ota
-            ota-darwin
+            ${{ matrix.output }}
             ota-source-${{ github.ref_name }}.tar.gz
             ota-source-${{ github.ref_name }}.zip
