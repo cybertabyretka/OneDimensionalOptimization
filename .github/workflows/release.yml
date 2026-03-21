@@ -39,38 +39,23 @@ jobs:
       - name: Set up C++ compiler
         if: runner.os == 'Windows'
         run: |
-          # Windows has g++ via MSYS2 or similar, but assuming it's available
           echo "Using g++"
 
       - name: Build on Windows
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          g++ -std=c++11 -Wall -Wextra -O2 main.cpp function_parser.cpp config_reader.cpp golden_opt.cpp -o ota-windows.exe
+          g++ -std=c++11 -Wall -Wextra -O2 -static main.cpp function_parser.cpp config_reader.cpp golden_opt.cpp -o ota-windows.exe
 
       - name: Build on Ubuntu
         if: matrix.os == 'ubuntu-latest'
         run: |
-          g++ -std=c++11 -Wall -Wextra -O2 main.cpp function_parser.cpp config_reader.cpp golden_opt.cpp -o ota-linux
+          g++ -std=c++11 -Wall -Wextra -O2 -static main.cpp function_parser.cpp config_reader.cpp golden_opt.cpp -o ota-linux
 
       - name: Build on macOS
         if: matrix.os == 'macos-latest'
         run: |
-          g++ -std=c++11 -Wall -Wextra -O2 main.cpp function_parser.cpp config_reader.cpp golden_opt.cpp -o ota-darwin
-
-      - name: Package source archives
-        shell: bash
-        run: |
-          # Use git archive to avoid "file changed as we read it" caused by files being written during build.
-          git archive --format=tar HEAD | gzip > ota-source-${{ github.ref_name }}.tar.gz
-          git archive --format=zip -o ota-source-${{ github.ref_name }}.zip HEAD
-
-      - name: Check source archives
-        shell: bash
-        run: |
-          echo "= list source archives ="
-          ls -la ota-source-${{ github.ref_name }}.tar.gz
-          ls -la ota-source-${{ github.ref_name }}.zip
+          g++ -std=c++11 -Wall -Wextra -O2 -static main.cpp function_parser.cpp config_reader.cpp golden_opt.cpp -o ota-darwin
 
       - name: Check Windows artifact
         if: matrix.os == 'windows-latest'
@@ -100,5 +85,3 @@ jobs:
             ota-windows.exe
             ota-linux
             ota-darwin
-            ota-source-${{ github.ref_name }}.tar.gz
-            ota-source-${{ github.ref_name }}.zip
