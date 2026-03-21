@@ -42,21 +42,23 @@ jobs:
           # Windows has g++ via MSYS2 or similar, but assuming it's available
           echo "Using g++"
 
-      - name: Build via Makefile
+      - name: Build via Makefile on Windows
+        if: matrix.os == 'windows-latest'
         run: |
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            mingw32-make all
-          else
-            make all
-          fi
-          # Makefile produces ota.exe in all cases; remap for platform-named artifact
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            cp ota.exe ota-windows.exe
-          elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            cp ota.exe ota-linux
-          else
-            cp ota.exe ota-darwin
-          fi
+          mingw32-make all
+          copy ota.exe ota-windows.exe
+
+      - name: Build via Makefile on Ubuntu
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          make all
+          cp ota.exe ota-linux
+
+      - name: Build via Makefile on macOS
+        if: matrix.os == 'macos-latest'
+        run: |
+          make all
+          cp ota.exe ota-darwin
 
       - name: Package source archives
         run: |
