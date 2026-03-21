@@ -55,7 +55,7 @@ jobs:
       - name: Build on macOS
         if: matrix.os == 'macos-latest'
         run: |
-          g++ -std=c++11 -Wall -Wextra -O2 -static main.cpp function_parser.cpp config_reader.cpp golden_opt.cpp -o ota-darwin
+          g++ -std=c++11 -Wall -Wextra -O2 -static-libstdc++ main.cpp function_parser.cpp config_reader.cpp golden_opt.cpp -o ota-darwin
 
       - name: Check Windows artifact
         if: matrix.os == 'windows-latest'
