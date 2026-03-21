@@ -3,8 +3,8 @@
 
 #include "config_reader.hpp"
 
-// Structure to hold the bracketing interval for the minimum
-struct Tripple {
+// Structure to hold the interval for the minimum
+struct Triplet {
     double a;
     double b;
     double c;
@@ -23,16 +23,16 @@ public:
     // Constructor with function pointer and config
     Fop(double (*fp)(double x), const Config& cfg);
 
-    // Method to find a bracketing interval containing a local minimum
-    Tripple localize();
-    // Method to perform golden section search within the given bracket to find the minimum
-    double findmin(Tripple bracket); 
+    // Method to find an interval containing a local minimum
+    Triplet localize();
+    // Method to perform golden section search within the given interval to find the minimum
+    double findmin(Triplet interval); 
     // Method to compute the numerical derivative of the objective function at a given point
     double derivative(double x, double h = 1e-6) const;
     // Method to update or initialize the configuration parameters
     void set_config(const Config& cfg);
     // Helper method to validate the configuration parameters
-    void check_cfg(Config cfg_) const;
+    void check_cfg(const Config& cfg_) const;
 };
 
 #endif // GOLDEN_OPT_H

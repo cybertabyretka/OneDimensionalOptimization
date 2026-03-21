@@ -101,17 +101,17 @@ int main() {
     {
         Fop f(f_quad);
         set_default_config(f.cfg);
-        Tripple bracket;
+        Triplet interval;
         try {
-            bracket = f.localize();
+            interval = f.localize();
         } catch (const std::exception& e) {
             fail(std::string("localize_quad threw: ") + e.what());
-            bracket = {0.0, 0.0, 0.0};
+            interval = {0.0, 0.0, 0.0};
         }
-        if (!(bracket.a < bracket.c && bracket.c < bracket.b)) {
-            fail("localize_quad produced invalid bracket");
+        if (!(interval.a < interval.c && interval.c < interval.b)) {
+            fail("localize_quad produced invalid interval");
         }
-        double xmin = f.findmin(bracket);
+        double xmin = f.findmin(interval);
         check_close("findmin_quad", xmin, 0.0, 1e-4);
     }
 
@@ -119,14 +119,14 @@ int main() {
     {
         Fop f(f_flat);
         set_default_config(f.cfg);
-        Tripple bracket;
+        Triplet interval;
         try {
-            bracket = f.localize();
+            interval = f.localize();
         } catch (const std::exception& e) {
             fail(std::string("localize_flat threw: ") + e.what());
-            bracket = {0.0, 0.0, 0.0};
+            interval = {0.0, 0.0, 0.0};
         }
-        double xmin = f.findmin(bracket);
+        double xmin = f.findmin(interval);
         if (!std::isfinite(xmin)) {
             fail("findmin_flat returned non-finite result");
         }
@@ -140,15 +140,15 @@ int main() {
         cfg.init_b = 10.0;
         cfg.n_initial_points = 11;
         Fop f(f_cos, cfg);
-        Tripple bracket;
+        Triplet interval;
         try {
-            bracket = f.localize();
+            interval = f.localize();
         } catch (const std::exception& e) {
             fail(std::string("localize_cos threw: ") + e.what());
-            bracket = {0.0, 0.0, 0.0};
+            interval = {0.0, 0.0, 0.0};
         }
 
-        double xmin = f.findmin(bracket);
+        double xmin = f.findmin(interval);
         double fmin = f_cos(xmin);
         check_close("findmin_cos_value", fmin, -1.0, 1e-5);
     }
@@ -175,8 +175,8 @@ int main() {
     {
         Fop f(f_quad);
         set_default_config(f.cfg);
-        expect_throws<InvalidInputOptimizationArgument>("findmin_invalid_bracket_nan", [&]() { f.findmin({std::numeric_limits<double>::quiet_NaN(), 1.0, 0.0}); });
-        expect_throws<InvalidInputOptimizationArgument>("findmin_invalid_bracket_order", [&]() { f.findmin({1.0, 0.0, 0.5}); });
+        expect_throws<InvalidInputOptimizationArgument>("findmin_invalid_interval_nan", [&]() { f.findmin({std::numeric_limits<double>::quiet_NaN(), 1.0, 0.0}); });
+        expect_throws<InvalidInputOptimizationArgument>("findmin_invalid_interval_order", [&]() { f.findmin({1.0, 0.0, 0.5}); });
     }
 
     // 9) Stop conditions (argument/function/gradient)
@@ -191,16 +191,16 @@ int main() {
         cfg.stop_type = Config::BY_ARGUMENT;
         {
             Fop f(f_quad, cfg);
-            Tripple bracket = f.localize();
-            double xmin = f.findmin(bracket);
+            Triplet interval = f.localize();
+            double xmin = f.findmin(interval);
             check_close("stop_by_argument", xmin, 0.0, 1e-4);
         }
 
         cfg.stop_type = Config::BY_FUNCTION;
         {
             Fop f(f_quad, cfg);
-            Tripple bracket = f.localize();
-            double xmin = f.findmin(bracket);
+            Triplet interval = f.localize();
+            double xmin = f.findmin(interval);
             double fmin = f_quad(xmin);
             double f_left = f_quad(cfg.init_a);
             double f_right = f_quad(cfg.init_b);
@@ -215,8 +215,8 @@ int main() {
         cfg.stop_type = Config::BY_GRADIENT;
         {
             Fop f(f_quad, cfg);
-            Tripple bracket = f.localize();
-            double xmin = f.findmin(bracket);
+            Triplet interval = f.localize();
+            double xmin = f.findmin(interval);
             check_close("stop_by_gradient", xmin, 0.0, 1e-4);
         }
     }

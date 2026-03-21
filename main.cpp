@@ -99,10 +99,10 @@ int main(int argc, char* argv[]) {
 
             Fop optimizer(func, cfg);
 
-            Tripple bracket = optimizer.localize();
-            std::cout << "Bracket found: [" << bracket.a << ", " << bracket.b << "] with c=" << bracket.c << "\n";
+            Triplet interval = optimizer.localize();
+            std::cout << "Interval found: [" << interval.a << ", " << interval.b << "] with c=" << interval.c << "\n";
 
-            double min_x = optimizer.findmin(bracket);
+            double min_x = optimizer.findmin(interval);
             double min_y = func(min_x);
             std::cout << "Minimum found at x = " << min_x << ", f(x) = " << min_y << "\n";
 

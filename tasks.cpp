@@ -61,8 +61,8 @@ std::vector<double> find_all_extrema(double (*f)(double), const Config& cfg, boo
         Fop fo(extremum_wrapper, local_cfg);
 
         try {
-            Tripple bracket{left, right, xs[i]};
-            double xm = fo.findmin(bracket);
+            Triplet interval{left, right, xs[i]};
+            double xm = fo.findmin(interval);
             double xm_r = std::round(xm / 1e-6) * 1e-6;
             found.insert(xm_r);
         } catch (...) {}
@@ -108,8 +108,8 @@ int main() {
     c2.init_b = 10.0;
     c2.n_initial_points = 9;
     Fop fline(F2_line, c2);
-    Tripple bracket = fline.localize();
-    double tmin = fline.findmin(bracket);
+    Triplet interval = fline.localize();
+    double tmin = fline.findmin(interval);
     double fmin = F2_line(tmin);
     std::cout << "Minimum along the line: t* = " << std::setprecision(8) << tmin
               << ", F(t*) = " << fmin << "\n";

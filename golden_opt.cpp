@@ -12,7 +12,7 @@
  * @return void
  * @throws InvalidConfigArgument if any configuration parameter is invalid (e.g. non-positive step size, non-positive max_iters, etc.)
  */
-void Fop::check_cfg(Config cfg_) const {
+void Fop::check_cfg(const Config& cfg_) const {
     if (cfg_.n_initial_points < 1) {
         throw InvalidConfigArgument("n_initial_points must be >= 1");
     }
@@ -92,7 +92,7 @@ double Fop::derivative(double x, double h) const {
     return res;
 }
 
-Tripple Fop::localize() {
+Triplet Fop::localize() {
     if (fp == nullptr) throw ObjectiveFunctionPointerException("objective function pointer is null");
     this->check_cfg(cfg);
 
@@ -158,17 +158,17 @@ Tripple Fop::localize() {
         throw OptimizationException("Failed to localize a minimum within the specified parameters");
     }
 
-    Tripple t{best_a, best_b, best_c};
+    Triplet t{best_a, best_b, best_c};
     return t;
 }
 
-double Fop::findmin(Tripple bracket) {
+double Fop::findmin(Triplet interval) {
     if (fp == nullptr) throw ObjectiveFunctionPointerException("objective function pointer is null");
 
-    double a = bracket.a;
-    double b = bracket.b;
-    if (!std::isfinite(a) || !std::isfinite(b)) throw InvalidInputOptimizationArgument("bracket endpoints must be finite");
-    if (a >= b) throw InvalidInputOptimizationArgument("invalid bracket: a must be less than b");
+    double a = interval.a;
+    double b = interval.b;
+    if (!std::isfinite(a) || !std::isfinite(b)) throw InvalidInputOptimizationArgument("interval endpoints must be finite");
+    if (a >= b) throw InvalidInputOptimizationArgument("invalid interval: a must be less than b");
 
     const double phi = (std::sqrt(5.0) - 1.0) / 2.0;
     double c = b - phi * (b - a);
