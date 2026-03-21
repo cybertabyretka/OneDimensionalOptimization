@@ -1,0 +1,78 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        include:
+          - os: windows-latest
+            output: ota-windows.exe
+          - os: ubuntu-latest
+            output: ota-linux
+          - os: macos-latest
+            output: ota-darwin
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up C++ compiler
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y g++
+
+      - name: Set up C++ compiler
+        if: runner.os == 'macOS'
+        run: |
+          # macOS has clang by default
+          echo "Using clang"
+
+      - name: Set up C++ compiler
+        if: runner.os == 'Windows'
+        run: |
+          # Windows has g++ via MSYS2 or similar, but assuming it's available
+          echo "Using g++"
+
+      - name: Build via Makefile
+        run: |
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            mingw32-make all
+          else
+            make all
+          fi
+
+      - name: Package source archives
+        run: |
+          tar czf ota-source-${{ github.ref_name }}.tar.gz --exclude=".git" --exclude="*.o" .
+          powershell -Command "Compress-Archive -Path * -DestinationPath ota-source-${{ github.ref_name }}.zip -Force"
+
+      - name: Collect artifact
+        run: |
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            ls -la ota.exe
+          elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            ls -la ota
+          else
+            ls -la ota-darwin
+          fi
+          ls -la ota-source-${{ github.ref_name }}.tar.gz
+          ls -la ota-source-${{ github.ref_name }}.zip
+
+      - name: Upload Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ota.exe
+            ota
+            ota-darwin
+            ota-source-${{ github.ref_name }}.tar.gz
+            ota-source-${{ github.ref_name }}.zip
