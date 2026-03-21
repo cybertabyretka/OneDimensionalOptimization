@@ -32,7 +32,7 @@ public:
     // Method to update or initialize the configuration parameters
     void set_config(const Config& cfg);
     // Helper method to validate the configuration parameters
-    void check_cfg(Config cfg_);
+    void check_cfg(Config cfg_) const;
 };
 
 #endif // GOLDEN_OPT_H
