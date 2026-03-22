@@ -8,11 +8,16 @@
 #include <stdexcept>
 #include <algorithm>
 
+/// @brief Represents a single term in a polynomial, with a coefficient and a power of x.
 struct Term {
     double coeff;
     int power;
 };
 
+/// @brief Parse a single term in the polynomial.
+/// @param term_str The string representing the term.
+/// @return A Term struct containing the coefficient and power.
+/// @throws LaTeXParserException if the term is invalid.
 Term parse_term(const std::string& term_str) {
     Term t{0.0, 0};
     std::string s = term_str;
@@ -57,6 +62,9 @@ Term parse_term(const std::string& term_str) {
     return t;
 }
 
+/// @brief Parse a polynomial expression in LaTeX format and return a vector of Terms.
+/// @param expr The string representing the polynomial expression.
+/// @return A vector of Term structs representing the parsed polynomial.
 std::vector<Term> parse_polynomial(const std::string& expr) {
     std::vector<Term> terms;
     std::string s = expr;
@@ -77,6 +85,7 @@ std::vector<Term> parse_polynomial(const std::string& expr) {
 
 static std::vector<Term> global_terms;
 
+// Function to evaluate the polynomial at a given x using the global terms vector.
 double polynomial_function(double x) {
     double result = 0.0;
     for (const auto& term : global_terms) {
@@ -84,7 +93,9 @@ double polynomial_function(double x) {
     }
     return result;
 }
-
+/// @brief Parse a polynomial expression in LaTeX format and return a function pointer to evaluate it.
+/// @param latex_expr The string representing the polynomial expression.
+/// @return A function pointer to the parsed polynomial function.
 double (*parse_function(const std::string& latex_expr))(double) {
     global_terms = parse_polynomial(latex_expr);
     return polynomial_function;
