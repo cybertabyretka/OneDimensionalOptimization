@@ -84,7 +84,7 @@ std::vector<double> find_all_extrema(
 double F2_line(double t) {
     double x1 = 2.0 - t;
     double x2 = 1.0 + 2.0 * t;
-    double x3 = 6.0 + t;
+    double x3 = V + t;
     double val = x1 * x1 + V * x2 * x2 + x3 * x3
                  + 3.0 * x1 * x2 - V * x1 * x3 - x2 * x3
                  + x1 - V * x2 + x3;
@@ -130,18 +130,16 @@ int main() {
     }
 
     std::cout << "\n=== Task 2: 1D line search for local minimum ===\n";
-    Config c2 = cfg;
-    c2.init_a = -10.0;
-    c2.init_b = 10.0;
-    c2.n_initial_points = 9;
-    Fop fline(F2_line, c2);
+    Config cfg2 = cfg;
+    cfg2.n_initial_points = 10;
+    Fop fline(F2_line, cfg2);
     Triplet interval = fline.localize();
     double tmin = fline.findmin(interval);
     double fmin = F2_line(tmin);
     std::cout << "Minimum along the line: t* = " << std::setprecision(8) << tmin
               << ", F(t*) = " << fmin << "\n";
     std::cout << "Corresponding point x = ("
-              << (2.0 - tmin) << ", " << (1.0 + 2.0 * tmin) << ", " << (6.0 + tmin) << ")\n";
+              << (2.0 - tmin) << ", " << (1.0 + 2.0 * tmin) << ", " << (V + tmin) << ")\n";
 
     return 0;
 }
