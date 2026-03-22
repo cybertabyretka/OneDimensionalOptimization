@@ -68,7 +68,7 @@ void Fop::set_config(const Config& cfg_) {
 /// @throws ObjectiveFunctionPointerException if the objective function pointer is null.
 /// @throws InvalidInputDerivativeArgument when an invalid variable is encountered in a derivative computation.
 /// @throws ObjectiveFunctionEvaluationException if the objective function throws an exception during evaluation.
-double Fop::derivative(double x, double h = 1e-6) const {
+double Fop::derivative(double x, double h) const {
     if (fp == nullptr) throw ObjectiveFunctionPointerException("objective function pointer is null");
     if (!(h > 0.0)) throw InvalidInputDerivativeArgument("h for derivative must be > 0");
 
