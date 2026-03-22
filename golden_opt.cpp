@@ -9,7 +9,6 @@
 /*
  * @brief Helper method to validate the configuration parameters for the optimization algorithm.
  * @param cfg_  The configuration object to validate
- * @return void
  * @throws InvalidConfigArgument if any configuration parameter is invalid (e.g. non-positive step size, non-positive max_iters, etc.)
  */
 void Fop::check_cfg(const Config& cfg_) const {
@@ -63,7 +62,6 @@ Fop::Fop(double (*fp_)(double x), const Config& cfg_) {
 /*
  * @brief Method to update or initialize the configuration parameters for the optimization algorithm, with validation.
  * @param cfg_ The new configuration parameters to set
- * @return void
  * @throws InvalidConfigArgument if any configuration parameter is invalid
  */
 void Fop::set_config(const Config& cfg_) {
