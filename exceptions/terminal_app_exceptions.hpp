@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <string>
 
+/// @brief Base exception class for terminal application-related errors.
 class TerminalAppException : public std::runtime_error {
 public:
     explicit TerminalAppException(const std::string& message)
