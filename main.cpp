@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+/// @brief Prints the general help message for the terminal application, listing available commands and their usage.
 void print_general_help() {
     std::cout << "Optimization Terminal Application\n";
     std::cout << "Available commands:\n";
@@ -20,6 +21,7 @@ void print_general_help() {
     std::cout << "  findmin --help                         : Show help for findmin command\n";
 }
 
+/// @brief Prints the help message for the 'findmin' command, detailing its usage and the expected format of the function input.
 void print_findmin_help() {
     std::cout << "Find Minimum Command\n";
     std::cout << "Usage: opt_app.exe findmin <config_path> <function_path>\n";
@@ -36,6 +38,7 @@ void print_findmin_help() {
     std::cout << "Terms separated by + or -\n";
 }
 
+/// @brief Prints a sample default configuration in XML format to the console, which can be used as a template for creating custom configuration files.
 void print_default_config() {
     std::cout << "Default config sample:\n";
     std::cout << "<Config>\n";
@@ -51,6 +54,10 @@ void print_default_config() {
     std::cout << "</Config>\n";
 }
 
+/// @brief Main function for the terminal application.
+/// @param argc The number of command-line arguments.
+/// @param argv An array of command-line arguments.
+/// @return The exit status of the application.
 int main(int argc, char* argv[]) {
     if (argc == 1) {
         print_general_help();
